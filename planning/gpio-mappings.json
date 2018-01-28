@@ -1,0 +1,50 @@
+[
+	{
+		"channel": 1,
+		"relay_IN": 1,
+		"GPIO": 6,
+		"BCM": 31
+	},
+	{
+		"channel": 2,
+		"relay_IN": 2,
+		"GPIO": 12,
+		"BCM": 32
+	},
+	{
+		"channel": 3,
+		"relay_IN": 3,
+		"GPIO": 13,
+		"BCM": 33
+	},
+	{
+		"channel": 4,
+		"relay_IN": 4,
+		"GPIO": 16,
+		"BCM": 36
+	},
+	{
+		"channel": 5,
+		"relay_IN": 5,
+		"GPIO": 19,
+		"BCM": 35
+	},
+	{
+		"channel": 6,
+		"relay_IN": 6,
+		"GPIO": 20,
+		"BCM": 38
+	},
+	{
+		"channel": 7,
+		"relay_IN": 7,
+		"GPIO": 26,
+		"BCM": 37
+	},
+	{
+		"channel": 8,
+		"relay_IN": 8,
+		"GPIO": 21,
+		"BCM": 40
+	}
+]
