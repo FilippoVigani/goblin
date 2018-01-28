@@ -3,19 +3,25 @@
 		"id": 1,
 		"relay_IN": 1,
 		"GPIO": 6,
-		"BCM": 31
+		"BCM": 31,
+		"setting": "on",
+		"state": "on"
 	},
 	{
 		"id": 2,
 		"relay_IN": 2,
 		"GPIO": 12,
-		"BCM": 32
+		"BCM": 32,
+		"setting": "auto",
+		"state": "off"
 	},
 	{
 		"id": 3,
 		"relay_IN": 3,
 		"GPIO": 13,
-		"BCM": 33
+		"BCM": 33,
+		"setting": "off",
+		"state": "off"
 	},
 	{
 		"id": 4,
@@ -39,12 +45,33 @@
 		"id": 7,
 		"relay_IN": 7,
 		"GPIO": 26,
-		"BCM": 37
+		"BCM": 37,
+		"temperatureBinder": {
+			"thermometer": 2,
+			"slots": [
+				{
+					"from": "8.00",
+					"to": "20.00",
+					"min": 33.0,
+					"max": 35.0
+				},
+				{
+					"from": "20.00",
+					"to": "8.00",
+					"min": 24.0,
+					"max": 26.0
+				}
+			]
+		}
 	},
 	{
 		"id": 8,
 		"relay_IN": 8,
 		"GPIO": 21,
-		"BCM": 40
+		"BCM": 40,
+		"timeBinder": {
+			"turnOnAt": "8.00",
+			"turnOffAt": "20.00"
+		}
 	}
 ]
