@@ -46,6 +46,7 @@
 		"relay_IN": 7,
 		"GPIO": 26,
 		"BCM": 37,
+		"setting": "auto",
 		"temperatureBinder": {
 			"thermometer": 2,
 			"slots": [
@@ -69,9 +70,10 @@
 		"relay_IN": 8,
 		"GPIO": 21,
 		"BCM": 40,
+		"setting": "auto",
 		"timeBinder": {
 			"turnOnAt": "8.00",
-			"turnOffAt": "20.00"
+			"turnOffAt": "23.08"
 		}
 	}
 ]
