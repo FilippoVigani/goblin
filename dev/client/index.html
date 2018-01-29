@@ -15,6 +15,10 @@
   <link rel="stylesheet" href="dist/css/AdminLTE.min.css">
   <!-- AdminLTE Skins -->
   <link rel="stylesheet" href="dist/css/skins/skin-green.min.css">
+  <!-- iCheck for checkboxes and radio inputs -->
+  <link rel="stylesheet" href="plugins/iCheck/square/orange.css">
+  <!-- Gobiln style -->
+  <link rel="stylesheet" href="dist/css/goblin.css">
   <!-- Google Font -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic">
 </head>
@@ -224,7 +228,7 @@
       <ul class="sidebar-menu" data-widget="tree">
         <li class="header">HEADER</li>
         <!-- Optionally, you can add icons to the links -->
-        <li class="active"><a href="#"><i class="fa fa-link"></i> <span>Link</span></a></li>
+        <li class="active"><a href="#"><i class="fa fa-link"></i> <span>Overview</span></a></li>
         <li><a href="#"><i class="fa fa-link"></i> <span>Another Link</span></a></li>
         <li class="treeview">
           <a href="#"><i class="fa fa-link"></i> <span>Multilevel</span>
@@ -258,7 +262,7 @@
     </section>
 
     <!-- Main content -->
-    <section class="content container-fluid">
+    <section id="container" class="content container-fluid">
 
       <!-- Your Page Content Here -->
 
@@ -362,8 +366,12 @@
 <script src="dist/js/jquery.min.js"></script>
 <!-- Bootstrap 3.3.7 -->
 <script src="dist/js/bootstrap.min.js"></script>
+<!-- iCheck 1.0.1 -->
+<script src="../../plugins/iCheck/icheck.min.js"></script>
 <!-- AdminLTE App -->
 <script src="dist/js/adminlte.min.js"></script>
+<!-- Goblin App -->
+<script src="dist/js/goblin.js"></script>
 
 <!-- Optionally, you can add Slimscroll and FastClick plugins.
      Both of these plugins are recommended to enhance the

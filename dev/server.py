@@ -32,7 +32,9 @@ def set_channel_setting(channel_id, setting):
 	channel['setting'] = setting.lower()
 	update_state(channel)
 	save_channels()
-	return jsonify("Channel {} {}".format(channel['id'], 'set to auto.' if channel['setting'] == 'auto' else "turned {}".format(channel['setting'])))
+	response = {'channel': channel,
+				'message' : "Channel {} {}".format(channel['id'], 'set to auto.' if channel['setting'] == 'auto' else "turned {}".format(channel['setting']))}
+	return jsonify(response)
 
 def update_all_states():
 	"""Updates all the channels states to match their setting"""
@@ -48,8 +50,6 @@ def update_state(channel):
 	if channel['setting'] == 'auto':
 		if 'temperatureBinder' in channel: #Only needed for temperature binders, as time binders are controlled by cron scheduler
 			temp = readTemperature(channel['temperatureBinder']['thermometer'])
-			print(temp)
-
 			#find matching time slot
 			slot = None
 			for ts in channel['temperatureBinder']['slots']:
@@ -61,7 +61,7 @@ def update_state(channel):
 						slot = ts
 						break
 				else:
-					if now_datetime > from_datetime or now_datetime < to_datetime:
+					if now_datetime >= from_datetime or now_datetime < to_datetime:
 						slot = ts
 						break
 			if not slot:
@@ -73,10 +73,13 @@ def update_state(channel):
 			elif temp < slot['min'] and (not 'state' in channel or channel['state'] == 'off'): #Too cold!
 				print("Temperature too cold on thermometer {}".format(channel['temperatureBinder']['thermometer']))
 				turn(channel, on=True)
+		else if not 'timeBinder':
+			print("Channel {} is set to auto but no binder was found.".format(channel['id']))
+			turn(channel, off=True)
 		return
-	if channel['setting'] == 'on':
+	if channel['setting'] == 'on' and ('state' not in channel or channel['state'] != 'on'):
 		return turn(channel, on=True)
-	if channel['setting'] == 'off':
+	if channel['setting'] == 'off' and ('state' not in channel or channel['state'] != 'off'):
 		return turn(channel, off=True)
 
 def readTemperature(thermometer):
@@ -93,10 +96,16 @@ def turn(channel, on=False, off=False):
 		return
 	print("Channel {} turned {}".format(channel['id'], channel['state']))
 
+def remove_key(element, key):
+	if key in element:
+		del element[key]
+	return element
+
 def save_channels():
 	"""Saves channels settings on disk"""
+	channelsStrippedOfState = list(map(lambda c: remove_key(dict(c), 'state'), CHANNELS))
 	with open(CHANNELS_PATH, 'w') as cf:
-		json.dump(CHANNELS, cf, indent='\t')
+		json.dump(channelsStrippedOfState, cf, indent='\t')
 
 def time_to_datetime(time):
 	hm = time.replace(':','.').split('.')

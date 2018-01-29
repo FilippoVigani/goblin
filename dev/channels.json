@@ -4,24 +4,21 @@
 		"relay_IN": 1,
 		"GPIO": 6,
 		"BCM": 31,
-		"setting": "on",
-		"state": "on"
+		"setting": "off"
 	},
 	{
 		"id": 2,
 		"relay_IN": 2,
 		"GPIO": 12,
 		"BCM": 32,
-		"setting": "auto",
-		"state": "off"
+		"setting": "on"
 	},
 	{
 		"id": 3,
 		"relay_IN": 3,
 		"GPIO": 13,
 		"BCM": 33,
-		"setting": "off",
-		"state": "off"
+		"setting": "off"
 	},
 	{
 		"id": 4,
@@ -70,7 +67,7 @@
 		"relay_IN": 8,
 		"GPIO": 21,
 		"BCM": 40,
-		"setting": "auto",
+		"setting": "off",
 		"timeBinder": {
 			"turnOnAt": "8.00",
 			"turnOffAt": "23.08"
