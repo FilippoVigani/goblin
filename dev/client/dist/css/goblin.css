@@ -1,0 +1,85 @@
+.channel-box label{
+	font-size: 18px;
+	vertical-align: middle;
+	padding-right: 0.3em;
+	margin-bottom: 0px;
+}
+.channel-box span.lead{
+	display: block;
+	margin-bottom: 0px;
+}
+
+.channel-box span.lead:empty:before {
+  content: "\00a0";
+}
+
+#container{
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	height: 100%;
+	justify-content: flex-start;
+	align-content: flex-start;
+}
+
+/*.content-wrapper{
+	height: calc(100vh - 100px);
+}*/
+
+.channel-binders{
+}
+
+.channel-binders label{
+	width:100px;
+	font-weight: normal;
+}
+
+.channel-binders.box{
+	margin-bottom: 0px;
+	height: calc(100% - 90px);
+}
+.channel-binders .nav-tabs-custom{
+	margin-bottom: 0px;
+	box-shadow: none;
+}
+
+.channel-binders .input-group{
+	margin: 5px;
+}
+
+.channel-box .nav-tabs-custom > .tab-content{
+	padding: 0px;
+}
+
+.channel-binders .form-group{
+	margin-bottom: 0px;
+}
+
+.channel-box span{
+	display: block;
+}
+
+.hidden{
+	display: none;
+}
+
+.channel-box .info-box{
+	margin-bottom: 0px;
+}
+
+.channel-box{
+	margin-bottom: 15px;
+	/*flex-grow: 1;*/
+}
+
+.channel-box .nav-tabs-custom > .nav-tabs > li.active{
+	border-bottom-color: #f39c12;
+}
+
+.channel-box .nav-tabs-custom > .nav-tabs > li{
+	border-bottom: 3px solid transparent;
+	border-top: 0px;
+	margin-right: 0px;
+	width: 50%;
+	text-align: center;	
+}
