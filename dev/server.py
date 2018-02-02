@@ -8,6 +8,7 @@ from flask import Flask, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
+import RPi.GPIO as GPIO
 
 CHANNELS_PATH = './channels.json'
 APP = Flask(__name__, static_folder='client', static_url_path='')
@@ -73,7 +74,7 @@ def update_state(channel):
 			elif temp < slot['min'] and (not 'state' in channel or channel['state'] == 'off'): #Too cold!
 				print("Temperature too cold on thermometer {}".format(channel['temperatureBinder']['thermometer']))
 				turn(channel, on=True)
-		else if not 'timeBinder':
+		elif not 'timeBinder':
 			print("Channel {} is set to auto but no binder was found.".format(channel['id']))
 			turn(channel, off=True)
 		return
@@ -88,10 +89,10 @@ def readTemperature(thermometer):
 def turn(channel, on=False, off=False):
 	if on:
 		channel['state'] = 'on'
-		#GPIO.output(channel['GPIO'], GPIO.LOW)
+		GPIO.output(channel['GPIO'], GPIO.LOW)
 	elif off:
 		channel['state'] = 'off'
-		#GPIO.output(channel['GPIO'], GPIO.HIGH)
+		GPIO.output(channel['GPIO'], GPIO.HIGH)
 	else:
 		return
 	print("Channel {} turned {}".format(channel['id'], channel['state']))
@@ -112,6 +113,7 @@ def time_to_datetime(time):
 	return datetime.datetime.now().replace(hour=int(hm[0]), minute=int(hm[-1]), second=0, microsecond=0)
 
 def schedule_temperature_binders():
+	"""Updates all the channels every 5 minutes to match their temperature settings"""
 	SCHEDULER.add_job(
     	update_all_states,
     	trigger=IntervalTrigger(minutes=5),
@@ -121,6 +123,7 @@ def schedule_temperature_binders():
     	)
 
 def schedule_time_binder(channel):
+	"""Set up a scheduler bound to a channel that turns on and off the channel at the spicified time"""
 	if 'timeBinder' in channel:
 			onAt = time_to_datetime(channel['timeBinder']['turnOnAt'])
 			SCHEDULER.add_job(
@@ -138,8 +141,15 @@ def schedule_time_binder(channel):
 				replace_existing=True)
 
 def remove_time_binder(channel):
+	""""Remove the scheduled jobs bound to a specific channel"""
 	SCHEDULER.remove_job("channel_{}_time_binder_turn_on".format(channel['id']))
 	SCHEDULER.remove_job("channel_{}_time_binder_turn_off".format(channel['id']))
+
+def cleanup():
+	"""Stuff to clean before exiting"""
+	print('Shutting down...')
+	SCHEDULER.shutdown()
+	GPIO.cleanup()
 
 if __name__ == "__main__":
 	global CHANNELS
@@ -147,16 +157,17 @@ if __name__ == "__main__":
 	""" Read channels data from file system """
 	with open(CHANNELS_PATH) as cf:
 		CHANNELS = json.load(cf)
+	GPIO.setmode(GPIO.BOARD)
+	for channel in CHANNELS:
+		GPIO.setup(channel['GPIO'], GPIO.OUT, initial=GPIO.HIGH)
 	update_all_states()
 	SCHEDULER = BackgroundScheduler()
 	SCHEDULER.start()
 	schedule_temperature_binders()
 	for channel in CHANNELS:
 		schedule_time_binder(channel)
-	# Shut down the scheduler when exiting the app
-	atexit.register(lambda: SCHEDULER.shutdown())
 
-	APP.run()
+	atexit.register(cleanup)
 
-	
+	APP.run(host='0.0.0.0')
 

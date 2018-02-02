@@ -1,48 +1,49 @@
 [
 	{
 		"id": 1,
+		"name": "Lamp",
 		"relay_IN": 1,
-		"GPIO": 6,
-		"BCM": 31,
-		"setting": "off"
+		"GPIO": 13,
+		"BCM": 33,
+		"setting": "auto"
 	},
 	{
 		"id": 2,
 		"relay_IN": 2,
-		"GPIO": 12,
-		"BCM": 32,
-		"setting": "on"
+		"GPIO": 16,
+		"BCM": 36,
+		"setting": "off"
 	},
 	{
 		"id": 3,
 		"relay_IN": 3,
-		"GPIO": 13,
-		"BCM": 33,
-		"setting": "off"
+		"GPIO": 19,
+		"BCM": 35,
+		"setting": "auto"
 	},
 	{
 		"id": 4,
 		"relay_IN": 4,
-		"GPIO": 16,
-		"BCM": 36
+		"GPIO": 20,
+		"BCM": 38,
+		"setting": "off"
 	},
 	{
 		"id": 5,
 		"relay_IN": 5,
-		"GPIO": 19,
-		"BCM": 35
+		"GPIO": 26,
+		"BCM": 37,
+		"setting": "auto",
+		"timeBinder": {
+			"turnOnAt": "8.00",
+			"turnOffAt": "23.08"
+		}
 	},
 	{
 		"id": 6,
 		"relay_IN": 6,
-		"GPIO": 20,
-		"BCM": 38
-	},
-	{
-		"id": 7,
-		"relay_IN": 7,
-		"GPIO": 26,
-		"BCM": 37,
+		"GPIO": 21,
+		"BCM": 40,
 		"setting": "auto",
 		"temperatureBinder": {
 			"thermometer": 2,
@@ -60,17 +61,6 @@
 					"max": 26.0
 				}
 			]
-		}
-	},
-	{
-		"id": 8,
-		"relay_IN": 8,
-		"GPIO": 21,
-		"BCM": 40,
-		"setting": "off",
-		"timeBinder": {
-			"turnOnAt": "8.00",
-			"turnOffAt": "23.08"
 		}
 	}
 ]
