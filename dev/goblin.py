@@ -157,7 +157,7 @@ if __name__ == "__main__":
 	""" Read channels data from file system """
 	with open(CHANNELS_PATH) as cf:
 		CHANNELS = json.load(cf)
-	GPIO.setmode(GPIO.BOARD)
+	GPIO.setmode(GPIO.BCM)
 	for channel in CHANNELS:
 		GPIO.setup(channel['GPIO'], GPIO.OUT, initial=GPIO.HIGH)
 	update_all_states()
