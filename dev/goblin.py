@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Flask server that that interfaces a web client with the physical layer"""
 import json
 import time
@@ -66,7 +66,9 @@ def update_state(channel):
 						slot = ts
 						break
 			if not slot:
-				return print("Time slot not found for time {}.{} for channel {}".format(datetime.datetime.now().hour, datetime.datetime.now().minute, channel['id']))
+				now = datetime.datetime.now()
+				print("Time slot not found for time {}.{} for channel {}".format(now.hour, now.minute, channel['id']))
+				return
 			
 			if temp > slot['max'] and (not 'state' in channel or channel['state'] == 'on'): #Too hot!
 				print("Temperature too high on thermometer {}".format(channel['temperatureBinder']['thermometer']))
