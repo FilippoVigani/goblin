@@ -11,19 +11,19 @@ from apscheduler.triggers.cron import CronTrigger
 import RPi.GPIO as GPIO
 
 CHANNELS_PATH = './channels.json'
-APP = Flask(__name__, static_folder='client', static_url_path='')
+app = Flask(__name__, static_folder='client', static_url_path='')
 
-@APP.route('/')
+@app.route('/')
 def homepage():
 	"""Returns website homepage"""
-	return APP.send_static_file('index.html')
+	return app.send_static_file('index.html')
 
-@APP.route('/api/channels', methods=['GET'])
+@app.route('/api/channels', methods=['GET'])
 def get_channels():
 	"""Returns list of channels"""
 	return jsonify(CHANNELS)
 
-@APP.route('/api/channels/<channel_id>/set/<setting>', methods=['POST'])
+@app.route('/api/channels/<channel_id>/set/<setting>', methods=['POST'])
 def set_channel_setting(channel_id, setting):
 	"""Changes a channel setting {on,off,auto}"""
 	try:
@@ -171,5 +171,5 @@ if __name__ == "__main__":
 
 	atexit.register(cleanup)
 
-	APP.run(host='0.0.0.0')
+	app.run(host='0.0.0.0')
 
