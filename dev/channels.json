@@ -5,7 +5,12 @@
 		"relay_IN": 1,
 		"GPIO": 13,
 		"BOARD": 33,
-		"setting": "auto"
+		"setting": "off",
+		"binder": "time",
+		"timeBinder": {
+			"turnOnAt": "07:00",
+			"turnOffAt": "10:00"
+		}
 	},
 	{
 		"id": 2,
@@ -19,7 +24,12 @@
 		"relay_IN": 3,
 		"GPIO": 19,
 		"BOARD": 35,
-		"setting": "auto"
+		"setting": "auto",
+		"binder": "time",
+		"timeBinder": {
+			"turnOnAt": "02:00",
+			"turnOffAt": "04:00"
+		}
 	},
 	{
 		"id": 4,
@@ -34,6 +44,7 @@
 		"GPIO": 26,
 		"BOARD": 37,
 		"setting": "auto",
+		"binder": "time",
 		"timeBinder": {
 			"turnOnAt": "8.00",
 			"turnOffAt": "23.08"
@@ -45,6 +56,11 @@
 		"GPIO": 21,
 		"BOARD": 40,
 		"setting": "auto",
+		"binder": "temperature",
+		"timeBinder": {
+			"turnOnAt": "10.00",
+			"turnOffAt": "22.08"
+		},
 		"temperatureBinder": {
 			"thermometer": 2,
 			"slots": [

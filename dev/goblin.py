@@ -4,7 +4,7 @@ import json
 import time
 import atexit
 import datetime
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
@@ -37,6 +37,33 @@ def set_channel_setting(channel_id, setting):
 				'message' : "Channel {} {}".format(channel['id'], 'set to auto.' if channel['setting'] == 'auto' else "turned {}".format(channel['setting']))}
 	return jsonify(response)
 
+@app.route('/api/channels/<channel_id>/bind', methods=['POST'])
+def bind_channel(channel_id):
+	"""Changes a channel setting {on,off,auto}"""
+	try:
+		channel = next(c for c in CHANNELS if c['id'] == int(channel_id))
+	except:
+		return jsonify({'error': "Channel {} not found".format(channel_id)}), 404
+	
+	bindOptions = request.get_json(silent=True)
+
+	if 'binder' in bindOptions:
+		print('binder found')
+		channel['binder'] = bindOptions['binder']
+	if 'timeBinder' in bindOptions:
+		channel['timeBinder'] = bindOptions['timeBinder']
+	if 'temperatureBinder' in bindOptions:
+		channel['temperatureBinder'] = bindOptions['temperatureBinder']
+
+	update_state(channel)
+	remove_time_binder(channel)
+	schedule_time_binder(channel)
+	save_channels()
+
+	response = {'channel': channel,
+				'message' : "Channel {} bind options updated".format(channel['id'])}
+	return jsonify(response)
+
 def update_all_states():
 	"""Updates all the channels states to match their setting"""
 	print(" * Updating channels states.")
@@ -49,7 +76,7 @@ def update_state(channel):
 		#turn(channel, off=True)
 		return 
 	if channel['setting'] == 'auto':
-		if 'temperatureBinder' in channel: #Only needed for temperature binders, as time binders are controlled by cron scheduler
+		if 'binder' in channel and channel['binder'] == 'temperature' and 'temperatureBinder' in channel: #Only needed for temperature binders, as time binders are controlled by cron scheduler
 			temp = readTemperature(channel['temperatureBinder']['thermometer'])
 			#find matching time slot
 			slot = None
@@ -67,17 +94,17 @@ def update_state(channel):
 						break
 			if not slot:
 				now = datetime.datetime.now()
-				print("Time slot not found for time {}.{} for channel {}".format(now.hour, now.minute, channel['id']))
+				print(" ! Time slot not found for time {}.{} for channel {}".format(now.hour, now.minute, channel['id']))
 				return
 			
 			if temp > slot['max'] and (not 'state' in channel or channel['state'] == 'on'): #Too hot!
-				print("Temperature too high on thermometer {}".format(channel['temperatureBinder']['thermometer']))
+				print(" + Temperature too high on thermometer {}".format(channel['temperatureBinder']['thermometer']))
 				turn(channel, off=True)
 			elif temp < slot['min'] and (not 'state' in channel or channel['state'] == 'off'): #Too cold!
-				print("Temperature too cold on thermometer {}".format(channel['temperatureBinder']['thermometer']))
+				print(" + Temperature too cold on thermometer {}".format(channel['temperatureBinder']['thermometer']))
 				turn(channel, on=True)
 		elif not 'timeBinder':
-			print("Channel {} is set to auto but no binder was found.".format(channel['id']))
+			print(" ! Channel {} is set to auto but no binder was found.".format(channel['id']))
 			turn(channel, off=True)
 		return
 	if channel['setting'] == 'on' and ('state' not in channel or channel['state'] != 'on'):
@@ -97,7 +124,7 @@ def turn(channel, on=False, off=False):
 		GPIO.output(channel['GPIO'], GPIO.HIGH)
 	else:
 		return
-	print("Channel {} turned {}".format(channel['id'], channel['state']))
+	print(" + Channel {} turned {}".format(channel['id'], channel['state']))
 
 def remove_key(element, key):
 	if key in element:
@@ -126,7 +153,7 @@ def schedule_temperature_binders():
 
 def schedule_time_binder(channel):
 	"""Set up a scheduler bound to a channel that turns on and off the channel at the spicified time"""
-	if 'timeBinder' in channel:
+	if 'binder' in channel and channel['binder'] == 'time' and 'timeBinder' in channel:
 			onAt = time_to_datetime(channel['timeBinder']['turnOnAt'])
 			SCHEDULER.add_job(
 				lambda: turn(channel, on=channel['setting']=='auto'),
@@ -141,11 +168,16 @@ def schedule_time_binder(channel):
 				id="channel_{}_time_binder_turn_off".format(channel['id']),
 				name="Turn off channel {} every day at {}".format(channel['id'], channel['timeBinder']['turnOffAt']),
 				replace_existing=True)
+			print(' - Channel {} will turn on at {} and turn off at {}.'.format(channel['id'], channel['timeBinder']['turnOnAt'], channel['timeBinder']['turnOffAt']))
 
 def remove_time_binder(channel):
 	""""Remove the scheduled jobs bound to a specific channel"""
-	SCHEDULER.remove_job("channel_{}_time_binder_turn_on".format(channel['id']))
-	SCHEDULER.remove_job("channel_{}_time_binder_turn_off".format(channel['id']))
+	try:
+		SCHEDULER.remove_job("channel_{}_time_binder_turn_on".format(channel['id']))
+		SCHEDULER.remove_job("channel_{}_time_binder_turn_off".format(channel['id']))
+	except:
+		pass
+	print(' - Removed scheduled timers for channel {}'.format(channel['id']))
 
 def cleanup():
 	"""Stuff to clean before exiting"""

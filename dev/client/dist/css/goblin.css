@@ -13,6 +13,11 @@
   content: "\00a0";
 }
 
+.save-btn {
+	width: 100%;
+	text-transform: uppercase;	
+}
+
 #container{
 	display: flex;
 	flex-direction: row;
@@ -25,10 +30,6 @@
 /*.content-wrapper{
 	height: calc(100vh - 100px);
 }*/
-
-.channel-binders{
-}
-
 .channel-binders label{
 	width:100px;
 	font-weight: normal;
@@ -41,14 +42,22 @@
 .channel-binders .nav-tabs-custom{
 	margin-bottom: 0px;
 	box-shadow: none;
+	height: 100%;
+	display: flex;
+	flex-flow: column;
 }
 
 .channel-binders .input-group{
 	margin: 5px;
 }
 
+.channel-box .nav-tabs-custom > *{
+	flex: 0 1 auto;
+}
+
 .channel-box .nav-tabs-custom > .tab-content{
 	padding: 0px;
+	flex: 1 1 auto;
 }
 
 .channel-binders .form-group{
