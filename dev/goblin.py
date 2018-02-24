@@ -4,6 +4,7 @@ import json
 import time
 import atexit
 import datetime
+import copy
 from flask import Flask, jsonify, request
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -31,6 +32,76 @@ def set_channel_setting(channel_id, setting):
 	except:
 		return jsonify({'error': "Channel {} not found".format(channel_id)}), 404
 	channel['setting'] = setting.lower()
+	update_state(channel)
+	save_channels()
+	response = {'channel': channel,
+				'message' : "Channel {} {}".format(channel['id'], 'set to auto.' if channel['setting'] == 'auto' else "turned {}".format(channel['setting']))}
+	return jsonify(response)
+
+def time_of_day_to_seconds(timeOfDay, laterThan = -1):
+	x = time.strptime(timeOfDay,'%H:%M')
+	seconds = datetime.timedelta(hours=x.tm_hour,minutes=x.tm_min,seconds=x.tm_sec).total_seconds()
+	if (laterThan >= 0 and seconds <= laterThan):
+		seconds += 24*60*60
+	return seconds
+
+def seconds_to_time_of_day(seconds):
+	return time.strftime("%H:%M", time.gmtime(seconds))
+
+@app.route('/api/channels/<channel_id>/binders/<binder_index>/split', methods=['POST'])
+def split_binder(channel_id, binder_index):
+	"""Splits the selected binder in half"""
+	binder_index = int(binder_index)
+	try:
+		channel = next(c for c in CHANNELS if c['id'] == int(channel_id))
+	except:
+		return jsonify({'error': "Channel {} not found".format(channel_id)}), 404
+	newBinder = copy.copy(channel['binders'][binder_index])
+	fromSeconds = time_of_day_to_seconds(newBinder['from'])
+	toSeconds = time_of_day_to_seconds(newBinder['to'], laterThan=fromSeconds)
+	splitPointTimeOfDay = seconds_to_time_of_day((fromSeconds + toSeconds) / 2)
+	newBinder['to'] = splitPointTimeOfDay
+	channel['binders'][binder_index]['from'] = splitPointTimeOfDay
+	channel['binders'].insert(binder_index, newBinder)
+
+	update_state(channel)
+	save_channels()
+	response = {'channel': channel,
+				'message' : "Channel {} {}".format(channel['id'], 'set to auto.' if channel['setting'] == 'auto' else "turned {}".format(channel['setting']))}
+	return jsonify(response)
+
+@app.route('/api/channels/<channel_id>/binders/<binder_index>', methods=['POST'])
+def set_binder(channel_id, binder_index):
+	"""Splits the selected binder in half"""
+	binder_index = int(binder_index)
+	try:
+		channel = next(c for c in CHANNELS if c['id'] == int(channel_id))
+	except:
+		return jsonify({'error': "Channel {} not found".format(channel_id)}), 404
+	binder = channel['binders'][binder_index]
+	newBinder = request.get_json(silent=True)
+	fromSeconds = time_of_day_to_seconds(newBinder.get('from', binder.get('from')))
+	toSeconds = time_of_day_to_seconds(newBinder.get('to', binder.get('to')), laterThan=fromSeconds)
+	
+	binder.update({
+		'state': newBinder.get('state', binder.get('state')),
+		'min': newBinder.get('min', binder.get('min')),
+		'max': newBinder.get('max', binder.get('max')),
+		'from': seconds_to_time_of_day(fromSeconds),
+		'to': seconds_to_time_of_day(toSeconds)
+	})
+
+	for b in channel['binders']:
+		if b is binder: continue
+		b_fromSeconds = time_of_day_to_seconds(b['from'], laterThan=toSeconds)
+		b_toSeconds = time_of_day_to_seconds(b['to'], laterThan=b_fromSeconds)
+		if (fromSeconds <= b_fromSeconds and b_toSeconds <= toSeconds):
+			print('delete')
+			channel['binders'].remove(b)
+	binder_index = channel['binders'].index(binder)
+	channel['binders'][binder_index-1]['to'] = binder['from']
+	channel['binders'][(binder_index+1) % len(channel['binders'])]['from'] = binder['to']
+
 	update_state(channel)
 	save_channels()
 	response = {'channel': channel,
@@ -134,8 +205,11 @@ def remove_key(element, key):
 def save_channels():
 	"""Saves channels settings on disk"""
 	channelsStrippedOfState = list(map(lambda c: remove_key(dict(c), 'state'), CHANNELS))
-	with open(CHANNELS_PATH, 'w') as cf:
-		json.dump(channelsStrippedOfState, cf, indent='\t')
+	try:
+		with open(CHANNELS_PATH, 'w') as cf:
+			json.dump(channelsStrippedOfState, cf, indent='\t')
+	except:
+		print('Error while saving to file!')
 
 def time_to_datetime(time):
 	hm = time.replace(':','.').split('.')
@@ -203,5 +277,5 @@ if __name__ == "__main__":
 
 	atexit.register(cleanup)
 
-	app.run(host='0.0.0.0')
+	app.run(host='0.0.0.0', use_reloader=False, threaded=True)
 

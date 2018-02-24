@@ -5,12 +5,16 @@
 		"relay_IN": 1,
 		"GPIO": 13,
 		"BOARD": 33,
-		"setting": "off",
-		"binder": "time",
-		"timeBinder": {
-			"turnOnAt": "07:00",
-			"turnOffAt": "10:00"
-		}
+		"setting": "auto",
+		"binders": [
+			{
+				"from": "0:00",
+				"to": "0:00",
+				"state": "temperature",
+				"min": 24.0,
+				"max": 26.0
+			}
+		]
 	},
 	{
 		"id": 2,
@@ -25,11 +29,25 @@
 		"GPIO": 19,
 		"BOARD": 35,
 		"setting": "auto",
-		"binder": "time",
-		"timeBinder": {
-			"turnOnAt": "02:00",
-			"turnOffAt": "04:00"
-		}
+		"binders": [
+			{
+				"from": "9:00",
+				"to": "16:00",
+				"state": "temperature",
+				"min": 24.0,
+				"max": 26.0
+			},
+			{
+				"from": "16:00",
+				"to": "20:00",
+				"state": "on"
+			},
+			{
+				"from": "20:00",
+				"to": "9:00",
+				"state": "off"
+			}
+		]
 	},
 	{
 		"id": 4,
@@ -46,8 +64,8 @@
 		"setting": "auto",
 		"binder": "time",
 		"timeBinder": {
-			"turnOnAt": "8.00",
-			"turnOffAt": "23.08"
+			"turnOnAt": "8:00",
+			"turnOffAt": "23:08"
 		}
 	},
 	{
@@ -55,24 +73,24 @@
 		"relay_IN": 6,
 		"GPIO": 21,
 		"BOARD": 40,
-		"setting": "auto",
+		"setting": "on",
 		"binder": "temperature",
 		"timeBinder": {
-			"turnOnAt": "10.00",
-			"turnOffAt": "22.08"
+			"turnOnAt": "10:00",
+			"turnOffAt": "22:08"
 		},
 		"temperatureBinder": {
 			"thermometer": 2,
 			"slots": [
 				{
-					"from": "8.00",
-					"to": "20.00",
+					"from": "8:00",
+					"to": "20:00",
 					"min": 33.0,
 					"max": 35.0
 				},
 				{
-					"from": "20.00",
-					"to": "8.00",
+					"from": "20:00",
+					"to": "8:00",
 					"min": 24.0,
 					"max": 26.0
 				}
