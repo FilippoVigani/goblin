@@ -56,6 +56,9 @@ def split_binder(channel_id, binder_index):
 		channel = next(c for c in CHANNELS if c['id'] == int(channel_id))
 	except:
 		return jsonify({'error': "Channel {} not found".format(channel_id)}), 404
+
+	remove_scheduled_binders(channel)
+
 	newBinder = copy.copy(channel['binders'][binder_index])
 	fromSeconds = time_of_day_to_seconds(newBinder['from'])
 	toSeconds = time_of_day_to_seconds(newBinder['to'], laterThan=fromSeconds)
@@ -65,6 +68,7 @@ def split_binder(channel_id, binder_index):
 	channel['binders'].insert(binder_index, newBinder)
 
 	update_state(channel)
+	schedule_binders(channel)
 	save_channels()
 	response = {'channel': channel,
 				'message' : "Channel {} {}".format(channel['id'], 'set to auto.' if channel['setting'] == 'auto' else "turned {}".format(channel['setting']))}
@@ -78,6 +82,9 @@ def set_binder(channel_id, binder_index):
 		channel = next(c for c in CHANNELS if c['id'] == int(channel_id))
 	except:
 		return jsonify({'error': "Channel {} not found".format(channel_id)}), 404
+
+	remove_scheduled_binders(channel)
+
 	binder = channel['binders'][binder_index]
 	newBinder = request.get_json(silent=True)
 	fromSeconds = time_of_day_to_seconds(newBinder.get('from', binder.get('from')))
@@ -91,48 +98,25 @@ def set_binder(channel_id, binder_index):
 		'to': seconds_to_time_of_day(toSeconds)
 	})
 
-	for b in channel['binders']:
-		if b is binder: continue
-		b_fromSeconds = time_of_day_to_seconds(b['from'], laterThan=toSeconds)
-		b_toSeconds = time_of_day_to_seconds(b['to'], laterThan=b_fromSeconds)
-		if (fromSeconds <= b_fromSeconds and b_toSeconds <= toSeconds):
-			print('delete')
-			channel['binders'].remove(b)
-	binder_index = channel['binders'].index(binder)
-	channel['binders'][binder_index-1]['to'] = binder['from']
-	channel['binders'][(binder_index+1) % len(channel['binders'])]['from'] = binder['to']
+	if binder.get('from') == binder.get('to'):
+		channel['binders'] = [binder]
+	else:
+		for b in channel['binders']:
+			if b is binder: continue
+			b_fromSeconds = time_of_day_to_seconds(b['from'], laterThan=toSeconds)
+			b_toSeconds = time_of_day_to_seconds(b['to'], laterThan=b_fromSeconds)
+			if (fromSeconds <= b_fromSeconds and b_toSeconds <= toSeconds):
+				print('delete')
+				channel['binders'].remove(b)
+		binder_index = channel['binders'].index(binder)
+		channel['binders'][binder_index-1]['to'] = binder['from']
+		channel['binders'][(binder_index+1) % len(channel['binders'])]['from'] = binder['to']
 
 	update_state(channel)
+	schedule_binders(channel)
 	save_channels()
 	response = {'channel': channel,
-				'message' : "Channel {} {}".format(channel['id'], 'set to auto.' if channel['setting'] == 'auto' else "turned {}".format(channel['setting']))}
-	return jsonify(response)
-
-@app.route('/api/channels/<channel_id>/bind', methods=['POST'])
-def bind_channel(channel_id):
-	"""Changes a channel setting {on,off,auto}"""
-	try:
-		channel = next(c for c in CHANNELS if c['id'] == int(channel_id))
-	except:
-		return jsonify({'error': "Channel {} not found".format(channel_id)}), 404
-	
-	bindOptions = request.get_json(silent=True)
-
-	if 'binder' in bindOptions:
-		print('binder found')
-		channel['binder'] = bindOptions['binder']
-	if 'timeBinder' in bindOptions:
-		channel['timeBinder'] = bindOptions['timeBinder']
-	if 'temperatureBinder' in bindOptions:
-		channel['temperatureBinder'] = bindOptions['temperatureBinder']
-
-	update_state(channel)
-	remove_time_binder(channel)
-	schedule_time_binder(channel)
-	save_channels()
-
-	response = {'channel': channel,
-				'message' : "Channel {} bind options updated".format(channel['id'])}
+				'message' : "Binder {} of channel {} updated".format(binder_index, channel.get('id'))}
 	return jsonify(response)
 
 def update_all_states():
@@ -147,44 +131,49 @@ def update_state(channel):
 		#turn(channel, off=True)
 		return 
 	if channel['setting'] == 'auto':
-		if 'binder' in channel and channel['binder'] == 'temperature' and 'temperatureBinder' in channel: #Only needed for temperature binders, as time binders are controlled by cron scheduler
-			temp = readTemperature(channel['temperatureBinder']['thermometer'])
+		if 'binders' in channel: #Only needed for temperature binders, as time binders are controlled by cron scheduler
+			
 			#find matching time slot
 			slot = None
-			for ts in channel['temperatureBinder']['slots']:
-				from_datetime = time_to_datetime(ts['from'])
-				to_datetime = time_to_datetime(ts['to'])
+			for binder in channel.get('binders'):
+				from_datetime = time_of_day_to_datetime(binder['from'])
+				to_datetime = time_of_day_to_datetime(binder['to'])
+				if from_datetime == to_datetime:
+					slot = binder
+					break
 				now_datetime = datetime.datetime.now()
 				if from_datetime <= to_datetime:
 					if from_datetime <= now_datetime < to_datetime:
-						slot = ts
+						slot = binder
 						break
 				else:
 					if now_datetime >= from_datetime or now_datetime < to_datetime:
-						slot = ts
+						slot = binder
 						break
 			if not slot:
 				now = datetime.datetime.now()
 				print(" ! Time slot not found for time {}.{} for channel {}".format(now.hour, now.minute, channel['id']))
 				return
-			
-			if temp > slot['max'] and (not 'state' in channel or channel['state'] == 'on'): #Too hot!
-				print(" + Temperature too high on thermometer {}".format(channel['temperatureBinder']['thermometer']))
-				turn(channel, off=True)
-			elif temp < slot['min'] and (not 'state' in channel or channel['state'] == 'off'): #Too cold!
-				print(" + Temperature too cold on thermometer {}".format(channel['temperatureBinder']['thermometer']))
-				turn(channel, on=True)
-		elif not 'timeBinder':
-			print(" ! Channel {} is set to auto but no binder was found.".format(channel['id']))
-			turn(channel, off=True)
+			if slot.get('state') == 'on' and not channel.get('state') == 'on':
+				return turn(channel, on=True)
+			if slot.get('state') == 'off'and not channel.get('state') == 'off':
+				return turn(channel, off=True)
+			if slot.get('state') == 'temperature':
+				temp = readTemperature(binder.get('thermometer'))
+				if temp > slot.get('max') if slot.get('max') else 0.0 and channel.get('state','on') == 'on': #Too hot!
+					print(" + Temperature too high on thermometer {}".format(binder.get('thermometer')))
+					turn(channel, off=True)
+				elif temp < slot.get('min') if slot.get('min') else 0.0 and channel.get('state','off') == 'off': #Too cold!
+					print(" + Temperature too cold on thermometer {}".format(binder.get('thermometer')))
+					turn(channel, on=True)
 		return
-	if channel['setting'] == 'on' and ('state' not in channel or channel['state'] != 'on'):
+	if channel.get('setting') == 'on' and channel.get('state') != 'on':
 		return turn(channel, on=True)
-	if channel['setting'] == 'off' and ('state' not in channel or channel['state'] != 'off'):
+	if channel.get('setting') == 'off' and channel.get('state') != 'off':
 		return turn(channel, off=True)
 
 def readTemperature(thermometer):
-	return 23
+	return 23.0
 
 def turn(channel, on=False, off=False):
 	if on:
@@ -211,9 +200,11 @@ def save_channels():
 	except:
 		print('Error while saving to file!')
 
-def time_to_datetime(time):
-	hm = time.replace(':','.').split('.')
-	return datetime.datetime.now().replace(hour=int(hm[0]), minute=int(hm[-1]), second=0, microsecond=0)
+def time_of_day_to_datetime(timeOfDay):
+	if not timeOfDay:
+		return datetime.datetime.now()
+	hm = datetime.datetime.strptime(timeOfDay,'%H:%M')
+	return datetime.datetime.now().replace(hour=hm.hour, minute=hm.minute, second=0, microsecond=0)
 
 def schedule_temperature_binders():
 	"""Updates all the channels every 5 minutes to match their temperature settings"""
@@ -225,33 +216,27 @@ def schedule_temperature_binders():
     	replace_existing=True
     	)
 
-def schedule_time_binder(channel):
-	"""Set up a scheduler bound to a channel that turns on and off the channel at the spicified time"""
-	if 'binder' in channel and channel['binder'] == 'time' and 'timeBinder' in channel:
-			onAt = time_to_datetime(channel['timeBinder']['turnOnAt'])
-			SCHEDULER.add_job(
-				lambda: turn(channel, on=channel['setting']=='auto'),
-				trigger=CronTrigger(hour=onAt.hour, minute=onAt.minute),
-				id="channel_{}_time_binder_turn_on".format(channel['id']),
-				name="Turn on channel {} every day at {}".format(channel['id'], channel['timeBinder']['turnOnAt']),
+def schedule_binders(channel):
+	"""Set up a scheduler bound to a channel that updates the channel state on the time lapses points"""
+	for i, binder in enumerate(channel.get('binders', [])):
+		updateAt = time_of_day_to_datetime(binder.get('from'))
+		name = "Scheduled update for channel {} every day at {} ({})".format(channel.get('id'), binder.get('from'), binder.get('state'))
+		SCHEDULER.add_job(
+				lambda: update_state(channel),
+				trigger=CronTrigger(hour=updateAt.hour, minute=updateAt.minute),
+				id="channel_{}_update_{}".format(channel.get('id'), i),
+				name=name,
 				replace_existing=True)
-			offAt = time_to_datetime(channel['timeBinder']['turnOffAt'])
-			SCHEDULER.add_job(
-				lambda: turn(channel, off=channel['setting']=='auto'),
-				trigger=CronTrigger(hour=offAt.hour, minute=offAt.minute),
-				id="channel_{}_time_binder_turn_off".format(channel['id']),
-				name="Turn off channel {} every day at {}".format(channel['id'], channel['timeBinder']['turnOffAt']),
-				replace_existing=True)
-			print(' - Channel {} will turn on at {} and turn off at {}.'.format(channel['id'], channel['timeBinder']['turnOnAt'], channel['timeBinder']['turnOffAt']))
+		print(' ~ ' + name)
 
-def remove_time_binder(channel):
+def remove_scheduled_binders(channel):
 	""""Remove the scheduled jobs bound to a specific channel"""
-	try:
-		SCHEDULER.remove_job("channel_{}_time_binder_turn_on".format(channel['id']))
-		SCHEDULER.remove_job("channel_{}_time_binder_turn_off".format(channel['id']))
-	except:
-		pass
-	print(' - Removed scheduled timers for channel {}'.format(channel['id']))
+	for i, binder in enumerate(channel.get('binders', [])):
+		try:
+			SCHEDULER.remove_job("channel_{}_update_{}".format(channel.get('id'), i))
+		except:
+			pass
+	print(' - Removed scheduled timers for channel {}'.format(channel.get('id')))
 
 def cleanup():
 	"""Stuff to clean before exiting"""
@@ -273,7 +258,7 @@ if __name__ == "__main__":
 	SCHEDULER.start()
 	schedule_temperature_binders()
 	for channel in CHANNELS:
-		schedule_time_binder(channel)
+		schedule_binders(channel)
 
 	atexit.register(cleanup)
 

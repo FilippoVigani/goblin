@@ -156,8 +156,8 @@ function binderEditorDOM(channel, binderIndex){
 			from: $('input.timepicker[name=from]').val(),
 			to: $('input.timepicker[name=to]').val(),
 			state: $('input[name=state][type=radio]:checked').val(),
-			min: $('input.temperaturepicker[name=min]').val(),
-			max: $('input.temperaturepicker[name=max]').val(),
+			min: parseFloat($('input.temperaturepicker[name=min]').val()),
+			max: parseFloat($('input.temperaturepicker[name=max]').val()),
 		}
 
 		var query = `api/channels/${channel.id}/binders/${binderIndex}`
