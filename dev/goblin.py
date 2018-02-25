@@ -5,13 +5,15 @@ import time
 import atexit
 import datetime
 import copy
+import os
 from flask import Flask, jsonify, request
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 import RPi.GPIO as GPIO
 
-CHANNELS_PATH = './channels.json'
+
+CHANNELS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'channels.json')
 app = Flask(__name__, static_folder='client', static_url_path='')
 
 @app.route('/')
