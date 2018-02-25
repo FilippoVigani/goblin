@@ -1,23 +1,22 @@
 [
 	{
 		"id": 1,
-		"name": "Lamp",
+		"name": "UVB Lamp",
 		"relay_IN": 1,
 		"GPIO": 13,
 		"BOARD": 33,
-		"setting": "auto",
+		"setting": "off",
 		"binders": [
 			{
 				"from": "0:00",
 				"to": "0:00",
-				"state": "temperature",
-				"min": 24.0,
-				"max": 26.0
+				"state": "on"
 			}
 		]
 	},
 	{
 		"id": 2,
+		"name": "Ceramic Lamp",
 		"relay_IN": 2,
 		"GPIO": 16,
 		"BOARD": 36,
@@ -35,26 +34,12 @@
 		"relay_IN": 3,
 		"GPIO": 19,
 		"BOARD": 35,
-		"setting": "auto",
+		"setting": "off",
 		"binders": [
 			{
-				"from": "01:00",
-				"to": "16:00",
-				"state": "temperature",
-				"min": 24,
-				"max": 26
-			},
-			{
-				"from": "16:00",
-				"to": "20:00",
+				"from": "0:00",
+				"to": "0:00",
 				"state": "on"
-			},
-			{
-				"from": "20:00",
-				"to": "01:00",
-				"state": "off",
-				"min": 0,
-				"max": 0
 			}
 		]
 	},
@@ -77,21 +62,12 @@
 		"relay_IN": 5,
 		"GPIO": 26,
 		"BOARD": 37,
-		"setting": "auto",
+		"setting": "off",
 		"binders": [
 			{
-				"from": "00:00",
-				"to": "12:00",
-				"state": "off",
-				"min": null,
-				"max": null
-			},
-			{
-				"from": "12:00",
-				"to": "00:00",
-				"state": "on",
-				"min": null,
-				"max": null
+				"from": "0:00",
+				"to": "0:00",
+				"state": "on"
 			}
 		]
 	},
@@ -100,7 +76,7 @@
 		"relay_IN": 6,
 		"GPIO": 21,
 		"BOARD": 40,
-		"setting": "on",
+		"setting": "off",
 		"binders": [
 			{
 				"from": "0:00",

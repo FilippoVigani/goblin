@@ -32,8 +32,13 @@ def set_channel_setting(channel_id, setting):
 	except:
 		return jsonify({'error': "Channel {} not found".format(channel_id)}), 404
 	channel['setting'] = setting.lower()
+
+	remove_scheduled_binders(channel)
+
 	update_state(channel)
+	schedule_binders(channel)
 	save_channels()
+
 	response = {'channel': channel,
 				'message' : "Channel {} {}".format(channel['id'], 'set to auto.' if channel['setting'] == 'auto' else "turned {}".format(channel['setting']))}
 	return jsonify(response)
@@ -220,6 +225,8 @@ def schedule_temperature_binders():
 
 def schedule_binders(channel):
 	"""Set up a scheduler bound to a channel that updates the channel state on the time lapses points"""
+	if (channel.get('setting') != 'auto'):
+		return
 	for i, binder in enumerate(channel.get('binders', [])):
 		updateAt = time_of_day_to_datetime(binder.get('from'))
 		name = "Scheduled update for channel {} every day at {} ({})".format(channel.get('id'), binder.get('from'), binder.get('state'))
