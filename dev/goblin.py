@@ -53,15 +53,21 @@ def split_binder(channel_id, binder_index):
 	"""Splits the selected binder in half"""
 	binder_index = int(binder_index)
 	try:
-		channel = next(c for c in CHANNELS if c['id'] == int(channel_id))
+		channel = next(c for c in CHANNELS if c.get('id') == int(channel_id))
 	except:
 		return jsonify({'error': "Channel {} not found".format(channel_id)}), 404
 
+	try:
+		newBinder = copy.copy(channel.get('binders')[binder_index])
+	except:
+		response = {'channel': channel,
+				'error': "Binder {} not found in channel {}".format(binder_index, channel_id)}
+		return jsonify(response)
+
 	remove_scheduled_binders(channel)
 
-	newBinder = copy.copy(channel['binders'][binder_index])
-	fromSeconds = time_of_day_to_seconds(newBinder['from'])
-	toSeconds = time_of_day_to_seconds(newBinder['to'], laterThan=fromSeconds)
+	fromSeconds = time_of_day_to_seconds(newBinder.get('from'))
+	toSeconds = time_of_day_to_seconds(newBinder.get('to'), laterThan=fromSeconds)
 	splitPointTimeOfDay = seconds_to_time_of_day((fromSeconds + toSeconds) / 2)
 	newBinder['to'] = splitPointTimeOfDay
 	channel['binders'][binder_index]['from'] = splitPointTimeOfDay
@@ -71,7 +77,7 @@ def split_binder(channel_id, binder_index):
 	schedule_binders(channel)
 	save_channels()
 	response = {'channel': channel,
-				'message' : "Channel {} {}".format(channel['id'], 'set to auto.' if channel['setting'] == 'auto' else "turned {}".format(channel['setting']))}
+				'message' : "Channel {} {}".format(channel.get('id'), 'set to auto.' if channel.get('setting') == 'auto' else "turned {}".format(channel.get('setting')))}
 	return jsonify(response)
 
 @app.route('/api/channels/<channel_id>/binders/<binder_index>', methods=['POST'])
@@ -79,7 +85,7 @@ def set_binder(channel_id, binder_index):
 	"""Splits the selected binder in half"""
 	binder_index = int(binder_index)
 	try:
-		channel = next(c for c in CHANNELS if c['id'] == int(channel_id))
+		channel = next(c for c in CHANNELS if c.get('id') == int(channel_id))
 	except:
 		return jsonify({'error': "Channel {} not found".format(channel_id)}), 404
 
@@ -101,16 +107,16 @@ def set_binder(channel_id, binder_index):
 	if binder.get('from') == binder.get('to'):
 		channel['binders'] = [binder]
 	else:
-		for b in channel['binders']:
+		for b in channel.get('binders'):
 			if b is binder: continue
-			b_fromSeconds = time_of_day_to_seconds(b['from'], laterThan=toSeconds)
-			b_toSeconds = time_of_day_to_seconds(b['to'], laterThan=b_fromSeconds)
+			b_fromSeconds = time_of_day_to_seconds(b.get('from'), laterThan=toSeconds)
+			b_toSeconds = time_of_day_to_seconds(b.get('to'), laterThan=b_fromSeconds)
 			if (fromSeconds <= b_fromSeconds and b_toSeconds <= toSeconds):
 				print('delete')
 				channel['binders'].remove(b)
 		binder_index = channel['binders'].index(binder)
-		channel['binders'][binder_index-1]['to'] = binder['from']
-		channel['binders'][(binder_index+1) % len(channel['binders'])]['from'] = binder['to']
+		channel['binders'][binder_index-1]['to'] = binder.get('from')
+		channel['binders'][(binder_index+1) % len(channel['binders'])]['from'] = binder.get('to')
 
 	update_state(channel)
 	schedule_binders(channel)
@@ -127,17 +133,13 @@ def update_all_states():
 
 def update_state(channel):
 	"""Updates the physical state of a channel to match its setting"""
-	if not 'setting' in channel or not channel['setting'] in ['on','off','auto']:
-		#turn(channel, off=True)
-		return 
-	if channel['setting'] == 'auto':
+	if channel.get('setting') == 'auto':
 		if 'binders' in channel: #Only needed for temperature binders, as time binders are controlled by cron scheduler
-			
 			#find matching time slot
 			slot = None
 			for binder in channel.get('binders'):
-				from_datetime = time_of_day_to_datetime(binder['from'])
-				to_datetime = time_of_day_to_datetime(binder['to'])
+				from_datetime = time_of_day_to_datetime(binder.get('from'))
+				to_datetime = time_of_day_to_datetime(binder.get('to'))
 				if from_datetime == to_datetime:
 					slot = binder
 					break
@@ -152,7 +154,7 @@ def update_state(channel):
 						break
 			if not slot:
 				now = datetime.datetime.now()
-				print(" ! Time slot not found for time {}.{} for channel {}".format(now.hour, now.minute, channel['id']))
+				print(" ! Time slot not found for time {}.{} for channel {}".format(now.hour, now.minute, channel.get('id')))
 				return
 			if slot.get('state') == 'on' and not channel.get('state') == 'on':
 				return turn(channel, on=True)
@@ -184,7 +186,7 @@ def turn(channel, on=False, off=False):
 		GPIO.output(channel['GPIO'], GPIO.HIGH)
 	else:
 		return
-	print(" + Channel {} turned {}".format(channel['id'], channel['state']))
+	print(" + Channel {} turned {}".format(channel.get('id'), channel.get('state')))
 
 def remove_key(element, key):
 	if key in element:
@@ -252,7 +254,7 @@ if __name__ == "__main__":
 		CHANNELS = json.load(cf)
 	GPIO.setmode(GPIO.BCM)
 	for channel in CHANNELS:
-		GPIO.setup(channel['GPIO'], GPIO.OUT, initial=GPIO.HIGH)
+		GPIO.setup(channel.get('GPIO'), GPIO.OUT, initial=GPIO.HIGH)
 	update_all_states()
 	SCHEDULER = BackgroundScheduler()
 	SCHEDULER.start()
