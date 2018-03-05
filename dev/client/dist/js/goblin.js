@@ -1,4 +1,5 @@
 function fetchAndUpdate(query, args){
+	args['credentials'] = 'include'
 	return fetch(query, args)
 	.then(response => {
 		if (response.ok){
@@ -281,7 +282,7 @@ function addBindersEditorDOM(channel){
 }
 
 $(document).ready(() => {
-	fetch('api/channels', {method:'GET'}).then(response => response.json())
+	fetch('api/channels', {method:'GET', credentials: 'include'}).then(response => response.json())
 	.then(channels => {
 		channels.forEach(channel => {
 			$('#container').append(channelDOM(channel))

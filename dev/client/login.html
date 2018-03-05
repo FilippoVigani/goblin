@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Goblin | Log in</title>
+	<!-- Tell the browser to be responsive to screen width -->
+	<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+	<link rel="stylesheet" href="dist/css/bootstrap.min.css">
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="dist/css/font-awesome.min.css">
+	<!-- Ionicons -->
+	<link rel="stylesheet" href="dist/css/ionicons.min.css">
+	<!-- Theme style -->
+	<link rel="stylesheet" href="dist/css/AdminLTE.min.css">
+	<!-- AdminLTE Skins -->
+	<link rel="stylesheet" href="dist/css/skins/skin-green.min.css">
+	<!-- Google Font -->
+</head>
+<body class="hold-transition login-page">
+<div class="login-box">
+	<div class="login-logo">
+		<b>Goblin</b>
+	</div>
+	<!-- /.login-logo -->
+	<div class="login-box-body">
+		<form action="/api/login" method="POST">
+			<div class="form-group has-feedback">
+				<input type="text" class="form-control" placeholder="Username" name="username">
+				<span class="glyphicon glyphicon-user form-control-feedback"></span>
+			</div>
+			<div class="form-group has-feedback">
+				<input type="password" class="form-control" placeholder="Password" name="password">
+				<span class="glyphicon glyphicon-lock form-control-feedback"></span>
+			</div>
+			<div class="row">
+				<div class="col-md-12">
+					<button type="submit" class="btn btn-success btn-block btn-flat" id="login-btn">Sign In</button>
+				</div>
+			</div>
+		</form>
+	</div>
+	<!-- /.login-box-body -->
+</div>
+<!-- /.login-box -->
+
+<!-- jQuery 3 -->
+<script src="dist/js/jquery.min.js"></script>
+<!-- Bootstrap 3.3.7 -->
+<script src="dist/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+	/*$(document).ready(() => {
+		$('#login-btn').click(e => {
+			var body = {
+				username: $('input[name=username]').val(),
+				password: $('input[name=password]').val(),
+			}
+			fetch('api/login', {method: 'POST', body: JSON.stringify(body)})
+		})
+	})*/
+</script>
+</body>
