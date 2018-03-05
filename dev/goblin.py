@@ -6,29 +6,58 @@ import atexit
 import datetime
 import copy
 import os
-from flask import Flask, jsonify, request
+import hashlib
+import base64
+from flask import Flask, jsonify, request, redirect, session, escape
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 import RPi.GPIO as GPIO
 
-
 CHANNELS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'channels.json')
+USERS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'users.json')
 app = Flask(__name__, static_folder='client', static_url_path='')
+
+app.secret_key = base64.b64encode(os.urandom(64)).decode('utf-8') #used for session
 
 @app.route('/')
 def homepage():
 	"""Returns website homepage"""
-	return app.send_static_file('index.html')
+	if ('username' in session):
+		response = app.send_static_file('index.html')
+		response.headers['Cache-Control'] = 'no-cache'
+		return response
+	else:
+		return redirect('/login.html')
+
+def authenticate(username, password):
+	try:
+		user = next(u for u in USERS if u.get('username') == username)
+	except:
+		return False
+	return hashlib.sha256(((password if password else '') + user.get('salt')).encode('utf-8')).hexdigest() == user.get('password_hash')
+
+@app.route('/api/login', methods=['POST'])
+def login():
+	"""User authentication"""
+	if authenticate(request.form.get('username'), request.form.get('password')):
+		session['username'] = request.form.get('username')
+		return redirect('/')
+	else:
+		return redirect('/login.html')
 
 @app.route('/api/channels', methods=['GET'])
 def get_channels():
 	"""Returns list of channels"""
+	if not 'username' in session:
+		return jsonify({'error': "User not logged in"}), 403
 	return jsonify(CHANNELS)
 
 @app.route('/api/channels/<channel_id>/set/<setting>', methods=['POST'])
 def set_channel_setting(channel_id, setting):
 	"""Changes a channel setting {on,off,auto}"""
+	if not 'username' in session:
+		return jsonify({'error': "User not logged in"}), 403
 	try:
 		channel = next(c for c in CHANNELS if c['id'] == int(channel_id))
 	except:
@@ -58,6 +87,8 @@ def seconds_to_time_of_day(seconds):
 @app.route('/api/channels/<channel_id>/binders/<binder_index>/split', methods=['POST'])
 def split_binder(channel_id, binder_index):
 	"""Splits the selected binder in half"""
+	if not 'username' in session:
+		return jsonify({'error': "User not logged in"}), 403
 	binder_index = int(binder_index)
 	try:
 		channel = next(c for c in CHANNELS if c.get('id') == int(channel_id))
@@ -90,6 +121,8 @@ def split_binder(channel_id, binder_index):
 @app.route('/api/channels/<channel_id>/binders/<binder_index>', methods=['POST'])
 def set_binder(channel_id, binder_index):
 	"""Splits the selected binder in half"""
+	if not 'username' in session:
+		return jsonify({'error': "User not logged in"}), 403
 	binder_index = int(binder_index)
 	try:
 		channel = next(c for c in CHANNELS if c.get('id') == int(channel_id))
@@ -258,9 +291,12 @@ def cleanup():
 if __name__ == "__main__":
 	global CHANNELS
 	global SCHEDULER
+	global USERS
 	""" Read channels data from file system """
 	with open(CHANNELS_PATH) as cf:
 		CHANNELS = json.load(cf)
+	with open(USERS_PATH) as uf:
+		USERS = json.load(uf)
 	GPIO.setmode(GPIO.BCM)
 	for channel in CHANNELS:
 		GPIO.setup(channel.get('GPIO'), GPIO.OUT, initial=GPIO.HIGH)
