@@ -156,7 +156,7 @@ input + div .label{
 }
 .binder-editor .form-group>*{	
 	flex-grow: 0;
-	margin: 5px;
+	margin: 5px 0px;
 }
 .binder-editor .form-group>.spacer{	
 	flex-grow: 1;
