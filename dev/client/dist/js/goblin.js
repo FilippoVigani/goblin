@@ -285,7 +285,7 @@ $(document).ready(() => {
 	fetch('api/channels', {method:'GET', credentials: 'include'}).then(response => response.json())
 	.then(channels => {
 		channels.forEach(channel => {
-			$('#channels_container').append(channelDOM(channel))
+			$('#channels-container').append(channelDOM(channel))
 			addBindersEditorDOM(channel)
 		})
 	})

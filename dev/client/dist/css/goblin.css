@@ -14,7 +14,7 @@
   content: "\00a0";
 }
 
-#container{
+#channels-container{
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
