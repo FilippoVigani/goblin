@@ -5,7 +5,7 @@
 	padding-right: 0.3em;
 	margin-bottom: 0px;
 }
-.channel-box span.lead{
+.channel-box span.lead, .thermometer-box span.lead{
 	display: block;
 	margin-bottom: 0px;
 }

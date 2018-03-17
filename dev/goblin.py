@@ -275,7 +275,7 @@ def schedule_temperature_binders():
 	"""Updates all the channels every 5 minutes to match their temperature settings"""
 	SCHEDULER.add_job(
     	update_all_states,
-    	trigger=IntervalTrigger(minutes=5, start_date=datetime.datetime.now()),
+    	trigger=IntervalTrigger(minutes=5),
     	id='update_channels_state_job',
     	name='Update channel state every 5 minutes.',
     	replace_existing=True
@@ -284,7 +284,7 @@ def schedule_temperature_binders():
 	"""Read temperature and humidity data from all sensors"""
 	SCHEDULER.add_job(
     	fetch_thermometers_data,
-    	trigger=IntervalTrigger(seconds=30, start_date=datetime.datetime.now()),
+    	trigger=IntervalTrigger(seconds=30),
     	id='fetch_thermometers_data_job',
     	name='Update thermometers infos every 30 seconds.'.format(min),
     	replace_existing=True
@@ -334,6 +334,8 @@ if __name__ == "__main__":
 	GPIO.setmode(GPIO.BCM)
 	for channel in CHANNELS:
 		GPIO.setup(channel.get('GPIO'), GPIO.OUT, initial=GPIO.HIGH)
+	fetch_thermometers_data()
+	update_all_states()
 	SCHEDULER = BackgroundScheduler()
 	SCHEDULER.start()
 	schedule_temperature_binders()
