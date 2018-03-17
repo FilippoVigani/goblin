@@ -10,8 +10,8 @@ import hashlib
 import base64
 try:
 	import Adafruit_DHT
-except ModuleNotFoundError:
-	print(" ! Adafruit_DHT wasn't found. Continuing.")
+except:
+	print(" ! Adafruit_DHT couldn't be loaded. Continuing.")
 from flask import Flask, jsonify, request, redirect, session, escape
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -235,8 +235,8 @@ def fetch_thermometer_data(thermometer):
 	if thermometer.get('model') == 'DHT22':
 		try:
 			h, t = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, thermometer.get('GPIO'))
-			thermometer.temperature = t
-			thermometer.humidity = h
+			thermometer['temperature'] = t
+			thermometer['humidity'] = h
 		except NameError:
 			pass
 
