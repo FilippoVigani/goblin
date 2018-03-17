@@ -1,0 +1,8 @@
+[
+	{
+		"GPIO": 4,
+		"BOARD": 7,
+		"model": "DHT22",
+		"name": "DHT22"
+	}
+]

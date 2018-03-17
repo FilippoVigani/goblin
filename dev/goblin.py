@@ -8,6 +8,10 @@ import copy
 import os
 import hashlib
 import base64
+try:
+	import Adafruit_DHT
+except ModuleNotFoundError:
+	print(" ! Adafruit_DHT wasn't found. Continuing.")
 from flask import Flask, jsonify, request, redirect, session, escape
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -16,6 +20,7 @@ import RPi.GPIO as GPIO
 
 CHANNELS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'channels.json')
 USERS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'users.json')
+THERMOMETERS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'thermometers.json')
 app = Flask(__name__, static_folder='client', static_url_path='')
 
 app.secret_key = base64.b64encode(os.urandom(64)).decode('utf-8') #used for session
@@ -52,6 +57,13 @@ def get_channels():
 	if not 'username' in session:
 		return jsonify({'error': "User not logged in"}), 403
 	return jsonify(CHANNELS)
+
+@app.route('/api/thermometers', methods=['GET'])
+def get_thermometers():
+	"""Returns list of channels"""
+	if not 'username' in session:
+		return jsonify({'error': "User not logged in"}), 403
+	return jsonify(THERMOMETERS)
 
 @app.route('/api/channels/<channel_id>/set/<setting>', methods=['POST'])
 def set_channel_setting(channel_id, setting):
@@ -201,7 +213,7 @@ def update_state(channel):
 			if slot.get('state') == 'off'and not channel.get('state') == 'off':
 				return turn(channel, off=True)
 			if slot.get('state') == 'temperature':
-				temp = readTemperature(binder.get('thermometer'))
+				temp = binder.get('thermometer').get('temperature')
 				if temp > slot.get('max') if slot.get('max') else 0.0 and channel.get('state','on') == 'on': #Too hot!
 					print(" + Temperature too high on thermometer {}".format(binder.get('thermometer')))
 					turn(channel, off=True)
@@ -214,8 +226,19 @@ def update_state(channel):
 	if channel.get('setting') == 'off' and channel.get('state') != 'off':
 		return turn(channel, off=True)
 
-def readTemperature(thermometer):
-	return 23.0
+def fetch_thermometers_data():
+	print(" * Reading thermometers data.")
+	for thermometer in THERMOMETERS:
+		fetch_thermometer_data(thermometer)
+
+def fetch_thermometer_data(thermometer):
+	if thermometer.get('model') == 'DHT22':
+		try:
+			h, t = Adafruit_DHT.read_retry(Adafruit_DHT.DHT22, thermometer.get('GPIO'))
+			thermometer.temperature = t
+			thermometer.humidity = h
+		except NameError:
+			pass
 
 def turn(channel, on=False, off=False):
 	if on:
@@ -252,9 +275,18 @@ def schedule_temperature_binders():
 	"""Updates all the channels every 5 minutes to match their temperature settings"""
 	SCHEDULER.add_job(
     	update_all_states,
-    	trigger=IntervalTrigger(minutes=5),
+    	trigger=IntervalTrigger(minutes=5, start_date=datetime.datetime.now()),
     	id='update_channels_state_job',
-    	name='Update channel state every {} minutes.'.format(min),
+    	name='Update channel state every 5 minutes.',
+    	replace_existing=True
+    	)
+
+	"""Read temperature and humidity data from all sensors"""
+	SCHEDULER.add_job(
+    	fetch_thermometers_data,
+    	trigger=IntervalTrigger(seconds=30, start_date=datetime.datetime.now()),
+    	id='fetch_thermometers_data_job',
+    	name='Update thermometers infos every 30 seconds.'.format(min),
     	replace_existing=True
     	)
 
@@ -297,10 +329,11 @@ if __name__ == "__main__":
 		CHANNELS = json.load(cf)
 	with open(USERS_PATH) as uf:
 		USERS = json.load(uf)
+	with open(THERMOMETERS_PATH) as tf:
+		THERMOMETERS = json.load(tf)
 	GPIO.setmode(GPIO.BCM)
 	for channel in CHANNELS:
 		GPIO.setup(channel.get('GPIO'), GPIO.OUT, initial=GPIO.HIGH)
-	update_all_states()
 	SCHEDULER = BackgroundScheduler()
 	SCHEDULER.start()
 	schedule_temperature_binders()
