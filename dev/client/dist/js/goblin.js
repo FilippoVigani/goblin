@@ -72,8 +72,8 @@ function thermometerDOM(thermometer){
 				<div class="info-box-content">
 					<span class="info-box-text">${"Thermometer " + thermometer.id}</span>
 					<span class="lead">${thermometer.name ? thermometer.name : ''}</span>
-					<span class="lead">${thermometer.temperature ? thermometer.temperature : ''}</span>
-					<span class="lead">${thermometer.humidity ? thermometer.humidity : ''}</span>
+					<span class="lead">${thermometer.temperature ? thermometer.temperature.toFixed(2) + ' °C' : ''}</span>
+					<span class="lead">${thermometer.humidity ? thermometer.humidity.toFixed(2) + ' %' : ''}</span>
 				</div>
 			</div>
 		</div>`
