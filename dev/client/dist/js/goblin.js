@@ -80,6 +80,13 @@ function thermometerDOM(thermometer){
 }
 
 function binderEditorDOM(channel, binderIndex){
+	var thermometers_html = `<select class="form-control" name="thermometer">`
+	if (window.thermometers){
+		window.thermometers.forEach(thermometer => {
+			thermometers_html += `<option value="${thermometer.id}">${thermometer.name}</option>`
+		})
+	}
+	thermometers_html += `</select>`
 	var html = 
 		`<div class="binder-editor">
 			<div class="box-body form-group">
@@ -115,6 +122,7 @@ function binderEditorDOM(channel, binderIndex){
 					<label class="off" for="switch_right">Off</label>
 				</div>
 				<div class="temperature-control ${channel.binders[binderIndex].state == 'temperature' ? '' : 'hidden'}">
+				${thermometers_html}
 					<div class="input-group">
 						<span class="input-group-addon"><label>Min</label></span>
 						<input class="form-control temperaturepicker" type="number" placeholder="°C" step="0.5" min="0" max="100" name="min" value="${channel.binders[binderIndex].min}">
@@ -169,6 +177,7 @@ function binderEditorDOM(channel, binderIndex){
 
 	var save = function(){
 		var body = {
+			thermometer: $('select[name=thermometer]').val(),
 			from: $('input.timepicker[name=from]').val(),
 			to: $('input.timepicker[name=to]').val(),
 			state: $('input[name=state][type=radio]:checked').val(),
@@ -309,6 +318,7 @@ $(document).ready(() => {
 	fetch('api/thermometers', {method:'GET', credentials: 'include'})
 	.then(response => response.json())
 	.then(thermometers => {
+		window.thermometers = thermometers
 		thermometers.forEach(channel => {
 			$('#thermometers-container').append(thermometerDOM(channel))
 		})

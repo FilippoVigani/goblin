@@ -149,6 +149,7 @@ def set_binder(channel_id, binder_index):
 	toSeconds = time_of_day_to_seconds(newBinder.get('to', binder.get('to')), laterThan=fromSeconds)
 	
 	binder.update({
+		'thermometer': newBinder.get('thermometer', binder.get('thermometer')),
 		'state': newBinder.get('state', binder.get('state')),
 		'min': newBinder.get('min', binder.get('min')),
 		'max': newBinder.get('max', binder.get('max')),
@@ -213,7 +214,10 @@ def update_state(channel):
 			if slot.get('state') == 'off'and not channel.get('state') == 'off':
 				return turn(channel, off=True)
 			if slot.get('state') == 'temperature':
-				temp = binder.get('thermometer').get('temperature')
+				thermometer = next(t for t in THERMOMETERS if t['id'] == int(slot.get('thermometer')))
+				temp = thermometer.get('temperature')
+				if not temp:
+					return
 				if temp > slot.get('max') if slot.get('max') else 0.0 and channel.get('state','on') == 'on': #Too hot!
 					print(" + Temperature too high on thermometer {}".format(binder.get('thermometer')))
 					turn(channel, off=True)
